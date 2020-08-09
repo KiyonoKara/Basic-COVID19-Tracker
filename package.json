@@ -1,0 +1,9 @@
+{
+  "name": "Simple-COVID19-Tracker",
+  "version": "1.0.0",
+  "dependencies": {},
+  "devDependencies": {
+    "ascii-table": "0.0.9",
+    "request": "^2.88.2"
+  }
+}
