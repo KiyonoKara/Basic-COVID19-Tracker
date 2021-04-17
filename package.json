@@ -1,9 +1,5 @@
 {
-  "name": "Simple-COVID19-Tracker",
+  "name": "basic-covid19-tracker",
   "version": "1.0.0",
-  "dependencies": {},
-  "devDependencies": {
-    "ascii-table": "0.0.9",
-    "request": "^2.88.2"
-  }
+  "main": "src/index.js"
 }
