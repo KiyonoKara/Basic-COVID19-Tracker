@@ -1,43 +1,45 @@
-// Using the request module in order to get the data
-const request = require('request');
+// Utilities
+const { appendCommaToNumber, capitalizeFirstLetter, GET } = require('./util.js');
 
-// Using ascii-table so we can display the data
-const asciiTable = require('ascii-table');
-const globalCovTable = new asciiTable("Global COVID-19 Stats");
+// Local ascii renderer
+const Ascii = require('./table');
+const globalCovTable = new Ascii().setHeading("Key", "Global COVID-19 Stats");
 
-// This is optional but I'm using it to make everything look fancy.
-const { appendCommaToNumber, capitalizeFirstLetter } = require('./util.js');
+/*
+ * Author note: Discontinuing this completely since COVID-19 was supposed to be saved for 2020 only. 2020 has already passed so these are just finishing touches.
+ */
 
 /**
  * This will be the based URL and can be added upon
  * */
 const covURL = 'https://covid19.mathdro.id/api/';
 
-// Simple way to get the global statistics
+// Global statistics
 function globalCov() {
-    request.get(covURL, (error, response, body) => {
-        const globalCOVIDData = JSON.parse(body);
+    return new Promise(resolve => {
+        GET(covURL).then(body => {
+            const globalCOVIDData = JSON.parse(String(body));
 
-        // Gets the time the data was last updated from the parsed data
-        const globalCovLastUpdated = new Date(globalCOVIDData['lastUpdate']);
-        // Various date and time formatting in UTC
-        const dateTimeFormat = new Intl.DateTimeFormat('en', { year: 'numeric', month: 'numeric', day: '2-digit' });
-        const [{ value: month },,{ value: day },,{ value: year }] = dateTimeFormat.formatToParts(globalCovLastUpdated);
-        const timestamp = globalCovLastUpdated.toISOString().replace(/^[^:]*([0-2]\d:[0-5]\d).*$/, '$1');
-        // Get the names of the objects instead of manually listing them
-        /**
-         * Using Object is really useful for getting the names than what's inside
-         * */
-        const gcdKeys = Object.keys(globalCOVIDData);
-        for (let i = 0; i < 3; i++) {
-            globalCovTable.addRow(`${capitalizeFirstLetter(gcdKeys[i])}`, `${appendCommaToNumber(globalCOVIDData[gcdKeys[i]].value)}`);
-        }
+            // Gets the time the data was last updated from the parsed data
+            const globalCovLastUpdated = new Date(globalCOVIDData['lastUpdate']);
+            // Various date and time formatting in UTC
+            const dateTimeFormat = new Intl.DateTimeFormat('en', { year: 'numeric', month: 'numeric', day: '2-digit' });
+            const [{ value: month },,{ value: day },,{ value: year }] = dateTimeFormat.formatToParts(globalCovLastUpdated);
+            const timestamp = globalCovLastUpdated.toISOString().replace(/^[^:]*([0-2]\d:[0-5]\d).*$/, '$1');
+            // Get the names of the objects instead of manually listing them
+            /**
+             * Using Object is really useful for getting the names than what's inside
+             * */
+            const gcdKeys = Object.keys(globalCOVIDData);
+            for (let i = 0; i < 3; i++) {
+                globalCovTable.addRow(`${capitalizeFirstLetter(gcdKeys[i])}`, `${appendCommaToNumber(globalCOVIDData[gcdKeys[i]].value)}`);
+            }
 
-        // Adding timestamp to the last row
-        globalCovTable.addRow(`Last Updated`, `${month}/${day}/${year} - ${timestamp} UTC`);
+            // Adding timestamp to the last row
+            globalCovTable.addRow(`Last Updated`, `${month}/${day}/${year} - ${timestamp} UTC`);
 
-        // Prints out the data
-        console.log(globalCovTable.toString());
+            resolve(globalCovTable.toString());
+        });
     });
 }
 
@@ -49,36 +51,34 @@ function globalCov() {
  * */
 function countryCov(country) {
     const covCountryURL = covURL + "countries/" + country;
-    const countryCovTable = new asciiTable(`COVID-19 Stats for ${country}`);
-    request.get(covCountryURL, (error, response, body) => {
-        // Parsing the country data for COVID-19
-        const countryCovData = JSON.parse(body);
+    const countryCovTable = new Ascii().setHeading("Key", `COVID-19 Stats for ${country}`);
+    return new Promise(resolve => {
+        GET(covCountryURL).then(body => {
+            // Parsing the country data for COVID-19
+            const countryCovData = JSON.parse(body.toString());
 
-        // Once again getting the names of the objects instead of manually listing them
-        const ccdKeys = Object.keys(countryCovData);
+            // Once again getting the names of the objects instead of manually listing them
+            const ccdKeys = Object.keys(countryCovData);
 
-        // Gets the time the data was last updated from the parsed data
-        const countryCovLastUpdated = new Date(countryCovData['lastUpdate']);
-        // Various date and time formatting in UTC
-        const dateTimeFormat = new Intl.DateTimeFormat('en', { year: 'numeric', month: 'numeric', day: '2-digit' });
-        const [{ value: month },,{ value: day },,{ value: year }] = dateTimeFormat.formatToParts(countryCovLastUpdated);
-        const timestamp = countryCovLastUpdated.toISOString().replace(/^[^:]*([0-2]\d:[0-5]\d).*$/, '$1');
+            // Gets the time the data was last updated from the parsed data
+            const countryCovLastUpdated = new Date(countryCovData['lastUpdate']);
+            // Various date and time formatting in UTC
+            const dateTimeFormat = new Intl.DateTimeFormat('en', {year: 'numeric', month: 'numeric', day: '2-digit'});
+            const [{value: month}, , {value: day}, , {value: year}] = dateTimeFormat.formatToParts(countryCovLastUpdated);
+            const timestamp = countryCovLastUpdated.toISOString().replace(/^[^:]*([0-2]\d:[0-5]\d).*$/, '$1');
 
-        // Simple and efficient for loop to add the main data that we are looking for
-        for (let i = 0; i < 3; i++) {
-            countryCovTable.addRow(`${capitalizeFirstLetter(ccdKeys[i])}`, `${appendCommaToNumber(countryCovData[ccdKeys[i]].value)}`);
-        }
+            // Simple and efficient for loop to add the main data that we are looking for
+            for (let i = 0; i < 3; i++) {
+                countryCovTable.addRow(`${capitalizeFirstLetter(ccdKeys[i])}`, `${appendCommaToNumber(countryCovData[ccdKeys[i]].value)}`);
+            }
 
-        // Timestamp when the data was last updated which has been formatted
-        // This is optional but doing it for educational purposes
-        countryCovTable.addRow(`Last Updated`, `${month}/${day}/${year} - ${timestamp} UTC`);
+            // Timestamp when the data was last updated which has been formatted
+            // Optional timing
+            countryCovTable.addRow(`Last Updated`, `${month}/${day}/${year} - ${timestamp} UTC`);
 
-        console.log(countryCovTable.toString());
+            resolve(countryCovTable.toString());
+        });
     });
 }
 
-// Calling the functions so you can see what it the data looks like
-globalCov();
-
-// Using Japan as an example
-countryCov('japan');
+module.exports = { globalCov, countryCov };
